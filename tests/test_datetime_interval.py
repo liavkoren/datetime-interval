@@ -1,6 +1,8 @@
 from datetime import datetime, timedelta
 
-from datetime_interval import Interval, forever, PeriodicInterval
+from datetime_interval import Interval
+
+from datetime_interval.interval import IntervalError
 
 
 def pairs(lst):
@@ -76,4 +78,33 @@ for next24 in next24s:
     last24 = next24 - timedelta(1)
     test_last_next(last24, next24)
 
-# TODO: IntervalComparisonError?
+
+jan_start = datetime(2015, 1, 1)
+jan_mid = datetime(2015, 1, 15)
+jan_end = datetime(2015, 1, 31)
+jan_all = Interval(start=jan_start, end=jan_end)
+jan_half = Interval(start=jan_start, end=jan_mid)
+
+mar_start = datetime(2015, 3, 1)
+mar_end = datetime(2015, 3, 31)
+mar_all = Interval(start=mar_start, end=mar_end)
+
+jan_feb = Interval(start=datetime(2015, 1, 25), end=datetime(2015, 2, 10))
+
+assert jan_all.intersection(jan_half) == jan_half.intersection(jan_all)
+assert jan_feb.intersection(jan_all) == jan_all.intersection(jan_feb)
+assert jan_all.intersection(jan_half) == Interval(start=jan_start, end=jan_mid)
+assert jan_feb.intersection(jan_all) == Interval(start=jan_feb.start, end=jan_all.end)
+try:
+    jan_all.intersection(mar_all)
+    raise AssertionError('Expected IntervalError not raised.')
+except IntervalError:
+    pass
+
+try:
+    mar_all.intersection(jan_all)
+    raise AssertionError('Expected IntervalError not raised.')
+except IntervalError:
+    pass
+
+print('All tests passed.')

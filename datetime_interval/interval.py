@@ -5,9 +5,13 @@ Interval represents a duration of time at a specific point in time.
 from datetime import date, timedelta
 
 
-class IntervalComparisonError(Exception):
+class IntervalError(Exception):
+    pass
+
+
+class IntervalComparisonError(IntervalError):
     """
-    Raised when comparing inequal but overlapping Intervals.
+    Raised when comparing unequal but overlapping Intervals.
     """
     pass
 
@@ -116,6 +120,10 @@ class Interval(object):
     def __cmp__(self, other):
         """
         Provides comparison operators for two Intervals.
+
+        Intervals are only comparable if they do not overlap. The two intervals
+        must be strictly less than or greater than each other. Comparison of
+        overlapping intervals will raise IntervalComparisonError.
         """
         # TODO: Handle periodic intervals.
         assert isinstance(other, Interval)
@@ -181,3 +189,34 @@ class Interval(object):
             self.start - other,
             self.duration
         )
+
+    def __repr__(self):
+        return 'Interval(start={self.start}, end={self.end}, duration={self.duration})'.format(self=self)
+
+    def issuperset(self, other):
+        """
+        Test whether `other` is fully contained in this interval.
+        """
+        return self.start < other.start and self.end > other.end
+
+    def issubset(self, other):
+        """
+        Test whether this interval is fully contained in the other interval.
+        """
+        return self.start > other.start and self.end < other.end
+
+    def intersection(self, other):
+        """
+        Return a new Interval, defined by the intersection of this interval and the other interval.
+
+        If the intervals are disjoint, raises IntervalError.
+        """
+        try:
+            intervals_overlap = self.start in other or self.end in other
+            assert intervals_overlap or self.issuperset(other) or self.issubset(other)
+        except AssertionError:
+            raise IntervalError('Intervals do not intersect')
+
+        start = max(self.start, other.start)
+        end = min(self.end, other.end)
+        return Interval(start=start, end=end)
